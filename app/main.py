@@ -24,9 +24,6 @@ from app.queue.redis_client import close_async_redis, get_async_redis
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from app.core.rate_limit import limiter
-from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler
 from app.routers import health, infer, jobs, metrics
 from app.services.ollama_client import get_ollama_client
 
@@ -70,7 +67,6 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     setup_logging()
-    settings = get_settings()
 
     app = FastAPI(
         title="Async Inference Gateway",
@@ -90,10 +86,6 @@ def create_app() -> FastAPI:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
     app.add_middleware(SlowAPIMiddleware)
-
-    # Rate limiting
-    app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     app.add_middleware(
         CORSMiddleware,
