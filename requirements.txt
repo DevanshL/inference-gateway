@@ -25,3 +25,4 @@ python-dotenv==1.0.1
 structlog==24.4.0
 tenacity==9.0.0
 pyngrok==8.1.2
+slowapi==0.1.9
