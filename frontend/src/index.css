@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: #080c10;
+  color: #c9d5e0;
+  font-family: 'Space Grotesk', sans-serif;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #0d1117; }
+::-webkit-scrollbar-thumb { background: #1e2631; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3d4f63; }
+
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+.scanlines::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 212, 255, 0.015) 2px,
+    rgba(0, 212, 255, 0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.glow-accent { box-shadow: 0 0 20px rgba(0, 212, 255, 0.15); }
+.glow-green  { box-shadow: 0 0 20px rgba(0, 255, 148, 0.15); }
+.glow-amber  { box-shadow: 0 0 20px rgba(255, 184, 0, 0.15); }
+.text-glow   { text-shadow: 0 0 20px rgba(0, 212, 255, 0.4); }
+
+.streaming-cursor::after {
+  content: '▋';
+  color: #00d4ff;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}

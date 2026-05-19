@@ -1,0 +1,27 @@
+# Core
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+httpx==0.28.0
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# Async
+anyio==4.7.0
+
+# Queue (Phase 2)
+celery==5.4.0
+redis==5.2.1
+flower==2.0.1
+
+# Observability
+opentelemetry-api==1.29.0
+opentelemetry-sdk==1.29.0
+opentelemetry-instrumentation-fastapi==0.50b0
+opentelemetry-exporter-otlp-proto-grpc==1.29.0
+prometheus-client==0.21.1
+
+# Utilities
+python-dotenv==1.0.1
+structlog==24.4.0
+tenacity==9.0.0
+pyngrok==8.1.2

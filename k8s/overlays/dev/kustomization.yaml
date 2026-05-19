@@ -1,0 +1,69 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: inference-gateway
+
+bases:
+  - ../../base
+
+# Lower resource limits for local Minikube (M2 Pro has plenty but keep it sane)
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: gateway
+        namespace: inference-gateway
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: gateway
+                resources:
+                  requests:
+                    memory: "128Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "256Mi"
+                    cpu: "500m"
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: celery-worker
+        namespace: inference-gateway
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: celery-worker
+                resources:
+                  requests:
+                    memory: "128Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "384Mi"
+                    cpu: "700m"
+
+  - patch: |-
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: gateway-hpa
+        namespace: inference-gateway
+      spec:
+        minReplicas: 1
+        maxReplicas: 3
+
+  - patch: |-
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: celery-worker-hpa
+        namespace: inference-gateway
+      spec:
+        minReplicas: 1
+        maxReplicas: 3

@@ -1,0 +1,110 @@
+
+services:
+  # ── FastAPI Gateway ───────────────────────────────────────────────────────
+  - type: web
+    name: inference-gateway
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+
+    healthCheckPath: /health
+
+    envVars:
+      - key: GATEWAY_ENV
+        value: production
+      - key: GATEWAY_HOST
+        value: "0.0.0.0"
+      - key: GATEWAY_PORT
+        value: "8000"
+      - key: GATEWAY_LOG_LEVEL
+        value: INFO
+
+      # ── Ollama via ngrok tunnel ──────────────────────────────────────────
+      # Update this with your ngrok URL before deploying
+      # Run locally: OLLAMA_NUM_PARALLEL=4 ollama serve
+      # Then: ngrok http 11434
+      - key: OLLAMA_BASE_URL
+        value: https://YOUR-NGROK-URL.ngrok-free.app
+      - key: OLLAMA_TIMEOUT
+        value: "120.0"
+      - key: OLLAMA_KEEP_ALIVE
+        value: "1h"
+
+      # ── Model routing ─────────────────────────────────────────────────────
+      - key: ROUTING_FAST_MODEL
+        value: mistral:latest
+      - key: ROUTING_QUALITY_MODEL
+        value: llama3.2:latest
+      - key: ROUTING_CODE_MODEL
+        value: qwen2.5-coder:7b
+      - key: ROUTING_VISION_MODEL
+        value: llava:7b
+      - key: ROUTING_FAST_TIER_TOKEN_THRESHOLD
+        value: "300"
+      - key: ROUTING_FAST_TIER_COMPLEXITY_THRESHOLD
+        value: "0.4"
+      - key: ROUTING_SLA_TIMEOUT_MS
+        value: "30000"
+
+      # ── Redis (Render managed) ─────────────────────────────────────────────
+      - key: REDIS_URL
+        fromService:
+          name: inference-gateway-redis
+          type: redis
+          property: connectionString
+
+      # ── Auth (set your keys here) ─────────────────────────────────────────
+      # Generate: python3 -c "import secrets; print('key-' + secrets.token_hex(16))"
+      - key: GATEWAY_API_KEYS
+        sync: false   # set manually in Render dashboard
+
+      # ── Observability ──────────────────────────────────────────────────────
+      - key: OTEL_SERVICE_NAME
+        value: inference-gateway-prod
+      - key: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://localhost:4317   # no Jaeger on free tier
+
+  # ── Celery Worker ─────────────────────────────────────────────────────────
+  - type: worker
+    name: inference-gateway-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+
+    dockerCommand: celery -A app.worker.celery_app worker --loglevel=info -Q inference --concurrency=2
+
+    envVars:
+      - key: GATEWAY_ENV
+        value: production
+      - key: OLLAMA_BASE_URL
+        value: https://YOUR-NGROK-URL.ngrok-free.app
+      - key: OLLAMA_TIMEOUT
+        value: "120.0"
+      - key: OLLAMA_KEEP_ALIVE
+        value: "1h"
+      - key: ROUTING_FAST_MODEL
+        value: mistral:latest
+      - key: ROUTING_QUALITY_MODEL
+        value: llama3.2:latest
+      - key: ROUTING_CODE_MODEL
+        value: qwen2.5-coder:7b
+      - key: ROUTING_VISION_MODEL
+        value: llava:7b
+      - key: REDIS_URL
+        fromService:
+          name: inference-gateway-redis
+          type: redis
+          property: connectionString
+      - key: GATEWAY_API_KEYS
+        sync: false
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  - type: redis
+    name: inference-gateway-redis
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys-lru

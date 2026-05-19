@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: inference-gateway
+data:
+  # Gateway
+  GATEWAY_ENV: "production"
+  GATEWAY_HOST: "0.0.0.0"
+  GATEWAY_PORT: "8000"
+  GATEWAY_LOG_LEVEL: "INFO"
+
+  # Ollama — runs on Mac host, accessible via host.minikube.internal
+  OLLAMA_BASE_URL: "http://host.minikube.internal:11434"
+  OLLAMA_TIMEOUT: "120.0"
+  OLLAMA_MAX_RETRIES: "3"
+
+  # Model routing SLA thresholds
+  ROUTING_FAST_TIER_TOKEN_THRESHOLD: "300"
+  ROUTING_FAST_TIER_COMPLEXITY_THRESHOLD: "0.4"
+  ROUTING_FAST_MODEL: "mistral:latest"
+  ROUTING_QUALITY_MODEL: "llama3.2:latest"
+  ROUTING_SLA_TIMEOUT_MS: "30000"
+
+  # Redis — ClusterIP service inside k8s
+  REDIS_URL: "redis://redis-service:6379/0"
+
+  # Observability
+  OTEL_SERVICE_NAME: "inference-gateway"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger-service:4317"
