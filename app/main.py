@@ -15,15 +15,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import get_settings
 from app.core.logging import get_logger, setup_logging
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.tracing import setup_tracing, shutdown_tracing
 from app.middleware.request_context import RequestContextMiddleware
 from app.queue.redis_client import close_async_redis, get_async_redis
-from app.core.rate_limit import limiter, rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from app.routers import health, infer, jobs, metrics
 from app.services.ollama_client import get_ollama_client
 
@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
     try:
         redis = await get_async_redis()
         await redis.ping()
-        logger.info("redis_connected", url=settings.redis_url)
+        logger.info("redis_connected", url=get_settings().redis_url)
     except Exception as e:
         logger.warning("redis_not_reachable_on_startup", error=str(e))
 
