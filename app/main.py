@@ -21,6 +21,12 @@ from app.core.logging import get_logger, setup_logging
 from app.core.tracing import setup_tracing, shutdown_tracing
 from app.middleware.request_context import RequestContextMiddleware
 from app.queue.redis_client import close_async_redis, get_async_redis
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from app.core.rate_limit import limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
 from app.routers import health, infer, jobs, metrics
 from app.services.ollama_client import get_ollama_client
 
@@ -80,13 +86,18 @@ def create_app() -> FastAPI:
 
     setup_tracing(app)
 
+    # Rate limiter
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
+
+    # Rate limiting
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:3000",
-        ] if not settings.is_production else [],
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
