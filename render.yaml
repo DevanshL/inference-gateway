@@ -102,9 +102,12 @@ services:
       - key: GATEWAY_API_KEYS
         sync: false
 
-  # ── Redis ─────────────────────────────────────────────────────────────────
+# ── Redis ─────────────────────────────────────────────────────────────────
   - type: redis
     name: inference-gateway-redis
     plan: free
     region: oregon
     maxmemoryPolicy: allkeys-lru
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow all (internal Render services only)
