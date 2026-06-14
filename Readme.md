@@ -122,3 +122,88 @@ The frontend provides a real-time, interactive window into the gateway's operati
 - **WebSocket Live Feed:** Real-time streaming of inference requests, completions, and system events.
 - **Interactive Charts:** Powered by Recharts, visualizing key metrics like latency trends, model usage distribution, and active queue depth.
 - **Request Inspector:** A dedicated trace viewer UI to inspect the complete lifecycle and routing decisions of individual inference requests.
+
+---
+
+## 🚀 Setup & Local Configuration
+
+After cloning the repository, follow these steps to set up and run the application locally.
+
+### 1. Environment Configuration
+
+Create a `.env` file in the root directory. You can copy the template from `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Here are the key connection variables you need to configure:
+
+* **Redis Broker (`REDIS_URL`)**: 
+  * **Default**: `redis://localhost:6379/0`
+  * **Connection**: Used for Celery async task queueing, locking, and Dead Letter Queue (DLQ) streams. Requires a running Redis instance.
+* **Ollama Server (`OLLAMA_BASE_URL`)**:
+  * **Default**: `http://localhost:11434`
+  * **Connection**: Used to route heavy/complex inference requests to local models running in Ollama.
+* **OpenTelemetry & Observability**:
+  * **OTEL_EXPORTER_OTLP_ENDPOINT**: `http://localhost:4317` (Collector receiver)
+  * **PROMETHEUS_PORT**: `9090` (Metrics endpoint)
+  * **JAEGER_AGENT_HOST / PORT**: `localhost` / `6831` (Trace spans)
+
+---
+
+### 2. External Services & Connections
+
+Before starting the gateway, ensure these services are installed and running locally:
+
+1. **Redis Server**:
+   Start Redis locally using Docker:
+   ```bash
+   docker run -d -p 6379:6379 redis:alpine
+   ```
+   Or via Homebrew on macOS:
+   ```bash
+   brew services start redis
+   ```
+
+2. **Ollama (for heavy model routing)**:
+   * Download and install from [Ollama's website](https://ollama.com/).
+   * Start Ollama and pull the models specified in your routing configurations (e.g. `mistral` and `llama3.2`):
+     ```bash
+     ollama pull mistral
+     ollama pull llama3.2
+     ```
+
+3. **Jaeger & Prometheus (for Telemetry)**:
+   Start them using Docker or docker-compose to enable dashboard metrics and tracing logs.
+
+---
+
+### 3. Local Installation & Launch
+
+#### Backend:
+1. Initialize a Python virtual environment and install dependencies:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+2. Start the FastAPI Gateway:
+   ```bash
+   uvicorn main:app --reload --port 8000
+   ```
+3. Start the Celery Worker (in a separate terminal window):
+   ```bash
+   celery -A app.worker.celery_app worker --loglevel=info
+   ```
+
+#### Frontend Dashboard:
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   npm install
+   ```
+2. Run the development server:
+   ```bash
+   npm run dev
+   ```
